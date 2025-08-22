@@ -3,6 +3,7 @@
   "displayName": "XImgDock",
   "description": "A VS Code extension for XHTML editing: live preview, diagnostics, and an image dock for quick insert. / XHTML編集を支援する拡張機能（プレビュー・診断・画像挿入）",
   "version": "0.0.1",
+  "publisher": "ximgdock",
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -14,10 +15,94 @@
   "contributes": {
     "commands": [
       {
-        "command": "ximgdock.helloWorld",
-        "title": "Hello World"
+        "command": "ximgdock.showPreview",
+        "title": "XImgDock: プレビューを開く",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "ximgdock.selectImageFolder",
+        "title": "画像フォルダを選択",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "ximgdock.refreshImages",
+        "title": "画像を再読み込み",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ximgdock.insertImage",
+        "title": "画像を挿入"
+      },
+      {
+        "command": "ximgdock.changeSortOrder",
+        "title": "ソート順を変更",
+        "icon": "$(sort-precedence)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "ximgdock.selectImageFolder",
+          "when": "view == ximgdock-images",
+          "group": "navigation@1"
+        },
+        {
+          "command": "ximgdock.refreshImages",
+          "when": "view == ximgdock-images",
+          "group": "navigation@2"
+        },
+        {
+          "command": "ximgdock.changeSortOrder",
+          "when": "view == ximgdock-images",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "ximgdock.insertImage",
+          "when": "view == ximgdock-images && viewItem == imageItem"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ximgdock-view-container",
+          "title": "XImgDock",
+          "icon": "$(device-camera)"
+        }
+      ]
+    },
+    "views": {
+      "ximgdock-view-container": [
+        {
+          "id": "ximgdock-images",
+          "name": "Image Dock",
+          "type": "tree",
+          "icon": "$(file-media)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "XImgDock",
+      "properties": {
+        "ximgdock.previewDebounceDelay": {
+          "type": "number",
+          "default": 300,
+          "description": "プレビュー更新のデバウンス遅延時間（ミリ秒）"
+        },
+        "ximgdock.diagnosticDebounceDelay": {
+          "type": "number",
+          "default": 300,
+          "description": "診断更新のデバウンス遅延時間（ミリ秒）"
+        },
+        "ximgdock.thumbnailSize": {
+          "type": "number",
+          "default": 64,
+          "description": "サムネイルサイズ（ピクセル）"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -43,5 +128,9 @@
     "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2"
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.2.5",
+    "sharp": "0.34.3"
   }
 }
