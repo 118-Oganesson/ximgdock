@@ -37,6 +37,21 @@
         "command": "ximgdock.changeSortOrder",
         "title": "ソート順を変更",
         "icon": "$(sort-precedence)"
+      },
+      {
+        "command": "ximgdock.clearThumbnailCache",
+        "title": "サムネイルキャッシュをクリア",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "ximgdock.showImageGallery",
+        "title": "画像ギャラリーを開く",
+        "icon": "$(gallery)"
+      },
+      {
+        "command": "ximgdock.showImagePreview",
+        "title": "プレビューを表示",
+        "icon": "$(eye)"
       }
     ],
     "menus": {
@@ -55,12 +70,28 @@
           "command": "ximgdock.changeSortOrder",
           "when": "view == ximgdock-images",
           "group": "navigation@3"
+        },
+        {
+          "command": "ximgdock.clearThumbnailCache",
+          "when": "view == ximgdock-images",
+          "group": "navigation@4"
+        },
+        {
+          "command": "ximgdock.showImageGallery",
+          "when": "view == ximgdock-images",
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
         {
           "command": "ximgdock.insertImage",
-          "when": "view == ximgdock-images && viewItem == imageItem"
+          "when": "view == ximgdock-images && viewItem == imageItem",
+          "group": "inline"
+        },
+        {
+          "command": "ximgdock.showImagePreview",
+          "when": "view == ximgdock-images && viewItem == imageItem",
+          "group": "inline"
         }
       ]
     },
@@ -98,8 +129,22 @@
         },
         "ximgdock.thumbnailSize": {
           "type": "number",
-          "default": 64,
-          "description": "サムネイルサイズ（ピクセル）"
+          "default": 128,
+          "description": "サムネイルサイズ（ピクセル）",
+          "minimum": 32,
+          "maximum": 256
+        },
+        "ximgdock.previewSize": {
+          "type": "number",
+          "default": 300,
+          "description": "ホバープレビューの最大サイズ（ピクセル）",
+          "minimum": 100,
+          "maximum": 600
+        },
+        "ximgdock.useRelativePath": {
+          "type": "boolean",
+          "default": true,
+          "description": "画像パスを相対パスで挿入する"
         }
       }
     }

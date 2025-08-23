@@ -9,6 +9,8 @@ export class PreviewManager {
     private currentDocument: vscode.TextDocument | undefined;
     private currentEditor: vscode.TextEditor | undefined;
     private isUpdatingFromWebview = false;
+    private lastClickTime = 0;
+    private lastClickLine = -1;
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
@@ -16,18 +18,34 @@ export class PreviewManager {
     }
 
     private setupEditorEventHandlers() {
-        // エディタでダブルクリックされた時の処理
+        // エディタでマウスクリックを検出するための処理
         vscode.window.onDidChangeTextEditorSelection((event) => {
             if (this.isUpdatingFromWebview) {
                 return;
             }
 
             if (this.panel && event.textEditor.document === this.currentDocument) {
+                // ダブルクリックの検出（簡易版）
+                const currentTime = Date.now();
                 const line = event.selections[0].start.line;
-                this.panel.webview.postMessage({
-                    command: 'scrollToLine',
-                    line: line
-                });
+
+                // 同じ行を短時間で2回クリックした場合をダブルクリックとみなす
+                if (currentTime - this.lastClickTime < 500 && line === this.lastClickLine) {
+                    this.panel.webview.postMessage({
+                        command: 'scrollToLine',
+                        line: line
+                    });
+                }
+
+                this.lastClickTime = currentTime;
+                this.lastClickLine = line;
+            }
+        });
+
+        // テキストエディタの変更も監視
+        vscode.workspace.onDidChangeTextDocument((event) => {
+            if (this.panel && event.document === this.currentDocument) {
+                this.updatePreview(event.document);
             }
         });
     }
@@ -102,15 +120,22 @@ export class PreviewManager {
         // メッセージハンドラーの設定
         this.panel.webview.onDidReceiveMessage(
             message => {
+                console.log('Received message from webview:', message);
                 switch (message.command) {
                     case 'scrollToLine':
+                        console.log('PreviewManager: scrollToLine called with line:', message.line);
                         this.scrollToLine(message.line);
                         break;
                     case 'ready':
+                        console.log('PreviewManager: webview ready');
                         // WebViewが準備完了したら初期コンテンツを送信
                         if (this.currentDocument) {
                             this.doUpdatePreview();
                         }
+                        break;
+                    case 'elementClicked':
+                        console.log('PreviewManager: elementClicked with line:', message.line);
+                        this.scrollToLine(message.line);
                         break;
                 }
             },
@@ -133,6 +158,7 @@ export class PreviewManager {
         const content = this.currentDocument.getText();
         const processedContent = this.processXHTMLContent(content);
 
+        console.log('PreviewManager: sending content to webview');
         this.panel.webview.postMessage({
             command: 'updateContent',
             content: processedContent,
@@ -151,20 +177,43 @@ export class PreviewManager {
     }
 
     private processXHTMLContent(content: string): string {
-        // 各行にdata-line属性を追加
+        // 各行にdata-line属性を追加（改良版）
         const lines = content.split('\n');
         const processedLines = lines.map((line, index) => {
+            const trimmedLine = line.trim();
+
+            // 空行やコメント行はスキップ
+            if (!trimmedLine || trimmedLine.startsWith('<!--') || trimmedLine.startsWith('<?xml') || trimmedLine.startsWith('<!DOCTYPE')) {
+                return line;
+            }
+
             // HTMLタグがある場合、data-line属性を追加
-            if (line.trim().startsWith('<') && !line.trim().startsWith('<!--')) {
-                const tagMatch = line.match(/^(\s*)(<[^>]+?)(\/?>.*)/);
-                if (tagMatch) {
-                    const [, indent, tag, rest] = tagMatch;
-                    // 自己終了タグや終了タグでない場合のみdata-line属性を追加
-                    if (!tag.startsWith('</') && !tag.includes('data-line')) {
-                        return `${indent}${tag} data-line="${index}"${rest}`;
+            if (trimmedLine.includes('<') && trimmedLine.includes('>')) {
+                // 複数のタグが含まれる場合も考慮
+                let processedLine = line;
+
+                // 開始タグを検索して data-line 属性を追加
+                const tagRegex = /<(\w+)(\s[^>]*?)?(\s*\/?>)/g;
+                let match;
+                let offset = 0;
+
+                while ((match = tagRegex.exec(line)) !== null) {
+                    const [fullMatch, tagName, attributes = '', ending] = match;
+                    const isClosingTag = fullMatch.startsWith('</');
+
+                    // 終了タグでない場合のみ data-line 属性を追加
+                    if (!isClosingTag && !fullMatch.includes('data-line')) {
+                        const newTag = `<${tagName}${attributes} data-line="${index}"${ending}`;
+                        processedLine = processedLine.substring(0, match.index + offset) +
+                            newTag +
+                            processedLine.substring(match.index + offset + fullMatch.length);
+                        offset += newTag.length - fullMatch.length;
                     }
                 }
+
+                return processedLine;
             }
+
             return line;
         });
 
@@ -203,12 +252,15 @@ export class PreviewManager {
     }
 
     private scrollToLine(line: number) {
+        console.log('PreviewManager: scrollToLine called with line:', line);
         const editor = vscode.window.activeTextEditor;
         if (!editor || editor.document !== this.currentDocument) {
+            console.log('PreviewManager: no active editor or document mismatch');
             return;
         }
 
         this.isUpdatingFromWebview = true;
+        console.log('PreviewManager: setting isUpdatingFromWebview to true');
 
         const range = new vscode.Range(line, 0, line, 0);
         editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
@@ -217,13 +269,40 @@ export class PreviewManager {
         const position = new vscode.Position(line, 0);
         editor.selection = new vscode.Selection(position, position);
 
+        console.log('PreviewManager: scrolled to line', line);
+
         // フラグをリセット
         setTimeout(() => {
             this.isUpdatingFromWebview = false;
+            console.log('PreviewManager: reset isUpdatingFromWebview to false');
         }, 100);
     }
 
     private getWebviewContent(): string {
+        // 外部ファイルのパスを取得
+        const htmlUri = vscode.Uri.joinPath(this.context.extensionUri, 'src', 'preview', 'webview', 'index.html');
+        const scriptUri = vscode.Uri.joinPath(this.context.extensionUri, 'src', 'preview', 'webview', 'script.js');
+
+        const htmlWebviewUri = this.panel!.webview.asWebviewUri(htmlUri);
+        const scriptWebviewUri = this.panel!.webview.asWebviewUri(scriptUri);
+
+        // HTMLファイルの内容を読み込んで、スクリプトのパスを動的に設定
+        try {
+            let htmlContent = fs.readFileSync(htmlUri.fsPath, 'utf8');
+            // スクリプトのsrcを正しいWebview URIに置き換え
+            htmlContent = htmlContent.replace(
+                '<script src="script.js"></script>',
+                `<script src="${scriptWebviewUri.toString()}"></script>`
+            );
+            return htmlContent;
+        } catch (error) {
+            console.error('Failed to load HTML content:', error);
+            // フォールバック: インライン版を返す
+            return this.getFallbackWebviewContent();
+        }
+    }
+
+    private getFallbackWebviewContent(): string {
         return `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -241,7 +320,6 @@ export class PreviewManager {
             overflow-x: auto;
         }
 
-        /* データライン属性を持つ要素のスタイル */
         [data-line] {
             border-left: 3px solid transparent;
             padding-left: 8px;
@@ -249,6 +327,7 @@ export class PreviewManager {
             cursor: pointer;
             transition: all 0.2s ease;
             border-radius: 2px;
+            position: relative;
         }
 
         [data-line]:hover {
@@ -256,12 +335,27 @@ export class PreviewManager {
             background-color: var(--vscode-editor-lineHighlightBackground, rgba(55, 148, 255, 0.1));
         }
 
+        [data-line]:hover::before {
+            content: "Line " attr(data-line);
+            position: absolute;
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--vscode-editor-background);
+            color: var(--vscode-editorLineNumber-foreground);
+            font-size: 11px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            border: 1px solid var(--vscode-editor-lineHighlightBorder);
+            z-index: 100;
+            white-space: nowrap;
+        }
+
         .line-highlight {
             border-left-color: var(--vscode-editor-selectionBackground, #264f78) !important;
             background-color: var(--vscode-editor-selectionBackground, rgba(38, 79, 120, 0.3)) !important;
         }
 
-        /* 画像のスタイリング */
         img {
             max-width: 100%;
             height: auto;
@@ -276,39 +370,14 @@ export class PreviewManager {
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
-        img.error {
-            border-color: var(--vscode-errorForeground, #f14c4c);
-            background: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.1));
-            padding: 10px;
+        br[data-line] {
+            display: inline-block;
+            width: 100%;
+            height: 1px;
+            margin: 2px 0;
+            border-bottom: 1px dotted var(--vscode-editor-lineHighlightBorder, rgba(55, 148, 255, 0.3));
         }
 
-        /* エラー表示のスタイル */
-        .error {
-            color: var(--vscode-errorForeground, #f14c4c);
-            background-color: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.1));
-            border: 1px solid var(--vscode-inputValidation-errorBorder, #f14c4c);
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 6px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        }
-
-        .error h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: var(--vscode-errorForeground, #f14c4c);
-        }
-
-        .error pre {
-            background-color: var(--vscode-editor-background, #1e1e1e);
-            border: 1px solid var(--vscode-editor-lineHighlightBorder, #3794ff);
-            border-radius: 4px;
-            padding: 10px;
-            overflow-x: auto;
-            font-size: 12px;
-        }
-
-        /* 読み込み中のスタイル */
         .loading {
             display: flex;
             align-items: center;
@@ -317,22 +386,6 @@ export class PreviewManager {
             color: var(--vscode-foreground, #cccccc);
             font-size: 16px;
         }
-
-        .loading::before {
-            content: '';
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--vscode-editor-lineHighlightBorder, #3794ff);
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -340,93 +393,56 @@ export class PreviewManager {
         プレビューを読み込み中...
     </div>
     <script>
-        (function() {
-            const vscode = acquireVsCodeApi();
-            let currentHighlightLine = -1;
-            let baseUri = '';
+        console.log('Fallback script loading');
+        const vscode = acquireVsCodeApi();
 
-            // VS Code拡張からのメッセージを受信
-            window.addEventListener('message', event => {
-                const message = event.data;
-                
-                switch (message.command) {
-                    case 'updateContent':
-                        baseUri = message.baseUri || '';
-                        updateContent(message.content);
-                        break;
-                    case 'scrollToLine':
-                        scrollToLine(message.line);
-                        break;
-                }
-            });
-
-            function updateContent(content) {
-                const contentDiv = document.getElementById('content');
-                
-                try {
-                    // XHTMLコンテンツをレンダリング
-                    contentDiv.innerHTML = content;
-                    contentDiv.classList.remove('loading');
-
-                    // data-line属性を持つ要素にイベントリスナーを追加
-                    const elementsWithLine = contentDiv.querySelectorAll('[data-line]');
-                    elementsWithLine.forEach(element => {
-                        element.addEventListener('dblclick', (e) => {
-                            e.stopPropagation();
-                            const line = parseInt(element.getAttribute('data-line'));
-                            vscode.postMessage({
-                                command: 'scrollToLine',
-                                line: line
-                            });
-                        });
-                    });
-
-                    // 画像の読み込みエラーハンドリング
-                    const images = contentDiv.querySelectorAll('img');
-                    images.forEach(img => {
-                        img.addEventListener('error', (e) => {
-                            img.classList.add('error');
-                            img.alt = \`画像を読み込めませんでした: \${img.src}\`;
-                            console.error('Image load error:', img.src);
-                        });
-                    });
-                    
-                } catch (error) {
-                    contentDiv.innerHTML = \`
-                        <div class="error">
-                            <h3>プレビューエラー</h3>
-                            <p>XHTMLコンテンツの表示中にエラーが発生しました:</p>
-                            <pre>\${error.message}</pre>
-                        </div>
-                    \`;
-                    contentDiv.classList.remove('loading');
-                }
+        window.addEventListener('message', event => {
+            const message = event.data;
+            console.log('Fallback: received message', message.command);
+            
+            switch (message.command) {
+                case 'updateContent':
+                    updateContent(message.content);
+                    break;
+                case 'scrollToLine':
+                    scrollToLine(message.line);
+                    break;
             }
+        });
 
-            function scrollToLine(line) {
-                // 現在のハイライトを削除
-                const prevElement = document.querySelector('.line-highlight');
-                if (prevElement) {
-                    prevElement.classList.remove('line-highlight');
-                }
-                
-                // 新しいハイライトを設定
-                const element = document.querySelector(\`[data-line="\${line}"]\`);
-                if (element) {
-                    element.classList.add('line-highlight');
-                    element.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
+        function updateContent(content) {
+            console.log('Fallback: updating content');
+            const contentDiv = document.getElementById('content');
+            contentDiv.innerHTML = content;
+            contentDiv.classList.remove('loading');
+
+            const elementsWithLine = contentDiv.querySelectorAll('[data-line]');
+            console.log('Fallback: found', elementsWithLine.length, 'elements with data-line');
+            
+            elementsWithLine.forEach(element => {
+                element.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const line = parseInt(element.getAttribute('data-line'));
+                    console.log('Fallback: element clicked, line:', line);
+                    vscode.postMessage({
+                        command: 'elementClicked',
+                        line: line
                     });
-                    currentHighlightLine = line;
-                }
-            }
-
-            // 初期化完了を通知
-            vscode.postMessage({
-                command: 'ready'
+                });
             });
-        })();
+        }
+
+        function scrollToLine(line) {
+            console.log('Fallback: scrolling to line:', line);
+            const element = document.querySelector(\`[data-line="\${line}"]\`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.classList.add('line-highlight');
+            }
+        }
+
+        vscode.postMessage({ command: 'ready' });
     </script>
 </body>
 </html>`;

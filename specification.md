@@ -111,6 +111,7 @@ ximgdock/
 │   │       └── script.js         // Webview 側 JS
 │   ├── image-dock/
 │   │   ├── ImageDockProvider.ts  // TreeView Provider
+│   │   ├── ImageTreeView.ts      // 
 │   │   └── ThumbnailManager.ts   // sharp によるサムネイル生成
 │   ├── parser/
 │   │   └── Parser.ts             // fast-xml-parser による解析

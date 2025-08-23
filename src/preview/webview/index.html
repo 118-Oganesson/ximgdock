@@ -24,11 +24,29 @@
             cursor: pointer;
             transition: all 0.2s ease;
             border-radius: 2px;
+            position: relative;
         }
 
         [data-line]:hover {
             border-left-color: var(--vscode-editor-lineHighlightBorder, #3794ff);
             background-color: var(--vscode-editor-lineHighlightBackground, rgba(55, 148, 255, 0.1));
+        }
+
+        /* ホバー時に行番号を表示 */
+        [data-line]:hover::before {
+            content: "Line " attr(data-line);
+            position: absolute;
+            left: -70px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--vscode-editor-background);
+            color: var(--vscode-editorLineNumber-foreground);
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            border: 1px solid var(--vscode-editor-lineHighlightBorder);
+            z-index: 100;
+            white-space: nowrap;
         }
 
         .line-highlight {
@@ -49,6 +67,12 @@
         img:hover {
             transform: scale(1.02);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        img.error {
+            border-color: var(--vscode-errorForeground, #f14c4c);
+            background: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.1));
+            padding: 10px;
         }
 
         /* エラー表示のスタイル */
@@ -222,6 +246,21 @@
             background-color: var(--vscode-button-hoverBackground, #1177bb);
         }
 
+        /* br要素の可視化（デバッグ用） */
+        br[data-line] {
+            display: inline-block;
+            width: 100%;
+            height: 2px;
+            margin: 2px 0;
+            border-bottom: 1px dotted var(--vscode-editor-lineHighlightBorder, rgba(55, 148, 255, 0.3));
+            position: relative;
+        }
+
+        br[data-line]:hover {
+            border-bottom: 2px solid var(--vscode-editor-lineHighlightBorder, #3794ff);
+            background-color: var(--vscode-editor-lineHighlightBackground, rgba(55, 148, 255, 0.1));
+        }
+
         /* レスポンシブ対応 */
         @media (max-width: 768px) {
             body {
@@ -233,6 +272,11 @@
                 margin-left: -8px;
             }
 
+            [data-line]:hover::before {
+                left: -60px;
+                font-size: 10px;
+            }
+
             table {
                 font-size: 14px;
             }
@@ -242,6 +286,12 @@
                 padding: 8px;
             }
         }
+
+        /* クリック時のフィードバック */
+        [data-line]:active {
+            background-color: var(--vscode-editor-selectionBackground, rgba(38, 79, 120, 0.5)) !important;
+            transform: scale(1.005);
+        }
     </style>
 </head>
 
@@ -249,136 +299,7 @@
     <div id="content" class="loading">
         プレビューを読み込み中...
     </div>
-    <script>
-        // script.jsの内容をインライン化
-        (function () {
-            const vscode = acquireVsCodeApi();
-            let currentHighlightLine = -1;
-
-            // VS Code拡張からのメッセージを受信
-            window.addEventListener('message', event => {
-                const message = event.data;
-
-                switch (message.command) {
-                    case 'updateContent':
-                        updateContent(message.content);
-                        break;
-                    case 'scrollToLine':
-                        scrollToLine(message.line);
-                        break;
-                }
-            });
-
-            function updateContent(content) {
-                const contentDiv = document.getElementById('content');
-
-                try {
-                    // XHTMLコンテンツをレンダリング
-                    contentDiv.innerHTML = content;
-                    contentDiv.classList.remove('loading');
-
-                    // data-line属性を持つ要素にイベントリスナーを追加
-                    const elementsWithLine = contentDiv.querySelectorAll('[data-line]');
-                    elementsWithLine.forEach(element => {
-                        element.addEventListener('dblclick', (e) => {
-                            const line = parseInt(element.getAttribute('data-line'));
-                            vscode.postMessage({
-                                command: 'scrollToLine',
-                                line: line
-                            });
-                        });
-
-                        // ホバー効果
-                        element.addEventListener('mouseenter', (e) => {
-                            if (!element.classList.contains('line-highlight')) {
-                                element.style.backgroundColor = 'var(--vscode-editor-hoverHighlightBackground)';
-                            }
-                        });
-
-                        element.addEventListener('mouseleave', (e) => {
-                            if (!element.classList.contains('line-highlight')) {
-                                element.style.backgroundColor = '';
-                            }
-                        });
-                    });
-
-                } catch (error) {
-                    contentDiv.innerHTML = `
-                        <div class="error">
-                            <h3>プレビューエラー</h3>
-                            <p>XHTMLコンテンツの表示中にエラーが発生しました:</p>
-                            <pre>${error.message}</pre>
-                        </div>
-                    `;
-                    contentDiv.classList.remove('loading');
-                }
-            }
-
-            function scrollToLine(line) {
-                // 現在のハイライトを削除
-                if (currentHighlightLine >= 0) {
-                    const prevElement = document.querySelector(`[data-line="${currentHighlightLine}"]`);
-                    if (prevElement) {
-                        prevElement.classList.remove('line-highlight');
-                    }
-                }
-
-                // 新しいハイライトを設定
-                const element = document.querySelector(`[data-line="${line}"]`);
-                if (element) {
-                    element.classList.add('line-highlight');
-                    element.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                    currentHighlightLine = line;
-                }
-            }
-
-            // スクロール同期
-            let scrollTimeout;
-            window.addEventListener('scroll', () => {
-                if (scrollTimeout) {
-                    clearTimeout(scrollTimeout);
-                }
-
-                scrollTimeout = setTimeout(() => {
-                    const elements = document.querySelectorAll('[data-line]');
-                    const viewportHeight = window.innerHeight;
-                    const scrollTop = window.scrollY;
-
-                    // 画面中央に最も近い要素を見つける
-                    let closestElement = null;
-                    let closestDistance = Infinity;
-
-                    elements.forEach(element => {
-                        const rect = element.getBoundingClientRect();
-                        const elementCenter = rect.top + rect.height / 2;
-                        const viewportCenter = viewportHeight / 2;
-                        const distance = Math.abs(elementCenter - viewportCenter);
-
-                        if (distance < closestDistance && rect.top < viewportHeight && rect.bottom > 0) {
-                            closestDistance = distance;
-                            closestElement = element;
-                        }
-                    });
-
-                    if (closestElement) {
-                        const line = parseInt(closestElement.getAttribute('data-line'));
-                        vscode.postMessage({
-                            command: 'scrollToLine',
-                            line: line
-                        });
-                    }
-                }, 100);
-            });
-
-            // 初期化完了を通知
-            vscode.postMessage({
-                command: 'ready'
-            });
-        })();
-    </script>
+    <script src="script.js"></script>
 </body>
 
 </html>
