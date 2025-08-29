@@ -211,7 +211,7 @@ export class ImageGalleryPanel {
      * @returns {Promise<string>} 生成されたHTML文字列。
      */
     private async _getHtmlForWebview(): Promise<string> {
-        const galleryHtmlPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'webview', 'gallery.html');
+        const galleryHtmlPath = vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'gallery.html');
         let html = fs.readFileSync(galleryHtmlPath.fsPath, 'utf8');
 
         let imageGridHtml: string;

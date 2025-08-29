@@ -158,7 +158,7 @@ export class PreviewProvider {
      */
     private _getHtmlForWebview(document: vscode.TextDocument): string {
         // HTMLテンプレートを読み込む
-        const htmlPath = path.join(this._extensionUri.fsPath, 'src', 'webview', 'preview.html');
+        const htmlPath = path.join(this._extensionUri.fsPath, 'dist', 'webview', 'preview.html');
         let html = fs.readFileSync(htmlPath, 'utf8');
 
         // nonceを生成し、HTMLに埋め込む
@@ -166,7 +166,7 @@ export class PreviewProvider {
         html = html.replace(/your-nonce-here/g, nonce);
 
         // Webview用のスクリプトURIを生成し、HTMLに埋め込む
-        const scriptPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'webview', 'main.js');
+        const scriptPath = vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'main.js');
         const scriptUri = this._panel!.webview.asWebviewUri(scriptPath);
         html = html.replace('{{scriptUri}}', scriptUri.toString());
 
