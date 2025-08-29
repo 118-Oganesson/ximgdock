@@ -127,11 +127,21 @@ XImgDock の利用時、VS Code 内で以下の 4 領域を中心に構成され
   * 「問題」パネルに詳細メッセージを出力
 
 
-└── src/
-    ├── extension.js          // 拡張機能のメイン処理 (必須)
-    ├── previewProvider.js    // ライブプレビュー(Webview)の管理
-    ├── imageDockProvider.js  // 画像ドック(Webview)の管理
-    ├── diagnostics.js        // 構文診断のロジック
-    └── webview/
-        ├── preview.html      // プレビュー画面のHTMLテンプレート
-        └── imageDock.html    // 画像ドック画面のHTMLテンプレート
+
+
+ximgdock/
+├── .vscodeignore             // パッケージングから除外するファイル
+├── dist/                     // TypeScriptからコンパイルされたJSファイル
+│   └── extension.js
+├── node_modules/             // 依存パッケージ
+├── src/                      // ソースコード
+│   ├── webview/              // Webview用のアセット
+│   │   ├── main.js           // Webview用のスクリプト(同期処理)
+│   │   └── preview.html      // Webview用のHTMLテンプレート
+│   ├── extension.ts          // 拡張機能のメインファイル
+│   └── previewProvider.ts    // ライブプレビューのロジック
+├── .eslintrc.js              // ESLintの設定ファイル
+├── package.json              // 拡張機能のマニフェストファイル
+├── package-lock.json         // 依存パッケージのバージョンロック
+├── tsconfig.json             // TypeScriptの設定ファイル
+└── webpack.config.js         // webpackの設定ファイル

@@ -17,6 +17,11 @@
         "command": "ximgdock.showPreview",
         "title": "XImgDock: Open Preview",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "ximgdock.showImageGallery",
+        "title": "XImgDock: Show Image Gallery",
+        "icon": "$(device-camera)"
       }
     ],
     "menus": {
@@ -24,6 +29,11 @@
         {
           "when": "resourceLangId == xhtml || resourceLangId == html",
           "command": "ximgdock.showPreview",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceLangId == xhtml || resourceLangId == html",
+          "command": "ximgdock.showImageGallery",
           "group": "navigation"
         }
       ]

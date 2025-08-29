@@ -43,7 +43,7 @@ export class PreviewProvider {
 
         this._sourceEditor = editor; // 👈 プレビュー対象のエディタを記憶
         const documentUri = editor.document.uri;
-        const column = vscode.ViewColumn.Beside;
+        const column = vscode.ViewColumn.Two;
 
         if (this._panel) {
             this._panel.reveal(column);

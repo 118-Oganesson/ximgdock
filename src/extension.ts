@@ -1,6 +1,7 @@
 // src/extension.ts
 import * as vscode from 'vscode';
 import { PreviewProvider } from './previewProvider';
+import { ImageGalleryPanel } from './imageGalleryPanel';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('XImgDock is now active!');
@@ -13,6 +14,16 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('ximgdock.showPreview', () => {
             // 現在アクティブなエディタを対象にプレビューを表示
             previewProvider.createOrShow(vscode.window.activeTextEditor);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ximgdock.showImageGallery', () => {
+            ImageGalleryPanel.createOrShow(
+                context.extensionUri,
+                vscode.window.activeTextEditor,
+                previewProvider
+            );
         })
     );
 

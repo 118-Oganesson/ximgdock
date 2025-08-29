@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <style>
+        body {
+            padding: 10px;
+            font-family: sans-serif;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #image-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .image-item {
+            cursor: pointer;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 5px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .image-item:hover {
+            background-color: #3c3c3c;
+        }
+
+        .image-item img {
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .filename {
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 5px;
+        }
+
+        /* --- Size Control --- */
+        /* Medium (Default) */
+        #image-grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        }
+
+        .size-medium .image-item img {
+            max-height: 80px;
+        }
+
+        /* Small */
+        #image-grid.size-small {
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        }
+
+        .size-small .image-item img {
+            max-height: 50px;
+        }
+
+        /* Large */
+        #image-grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        .size-large .image-item img {
+            max-height: 120px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Image Gallery</h1>
+    <div class="controls">
+        <button id="select-folder-btn">Select Folder</button>
+        <button id="refresh-btn">Refresh</button>
+        <select id="sort-select">
+            <option value="name">Sort by Name</option>
+            <option value="date">Sort by Date</option>
+        </select>
+        <select id="size-select">
+            <option value="small">Size: Small</option>
+            <option value="medium" selected>Size: Medium</option>
+            <option value="large">Size: Large</option>
+        </select>
+    </div>
+
+    <div id="image-grid" class="size-medium">
+        {{imageGrid}}
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        document.getElementById('select-folder-btn').addEventListener('click', () => {
+            vscode.postMessage({ command: 'selectFolder' });
+        });
+
+        document.getElementById('refresh-btn').addEventListener('click', () => {
+            vscode.postMessage({ command: 'refresh' });
+        });
+
+        document.getElementById('sort-select').addEventListener('change', (event) => {
+            vscode.postMessage({
+                command: 'sort',
+                sortBy: event.target.value
+            });
+        });
+
+        document.getElementById('image-grid').addEventListener('click', (event) => {
+            const item = event.target.closest('.image-item');
+            if (item) {
+                const fileName = item.dataset.filename;
+                vscode.postMessage({
+                    command: 'insertImage',
+                    fileName: fileName
+                });
+            }
+        });
+
+        // ▼▼▼ Added: Event listener for size selection ▼▼▼
+        document.getElementById('size-select').addEventListener('change', (event) => {
+            const grid = document.getElementById('image-grid');
+            const size = event.target.value;
+
+            // Remove all existing size classes
+            grid.classList.remove('size-small', 'size-medium', 'size-large');
+
+            // Add the newly selected size class
+            grid.classList.add(`size-${size}`);
+        });
+        // ▲▲▲ Added ▲▲▲
+    </script>
+</body>
+
+</html>
