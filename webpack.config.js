@@ -20,8 +20,7 @@ const extensionConfig = {
     libraryTarget: 'commonjs2'
   },
   externals: {
-    vscode: 'commonjs vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
-    sharp: 'commonjs sharp' // ネイティブモジュールは外部依存として扱う
+    vscode: 'commonjs vscode' // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     // modules added here also need to be added in the .vscodeignore file
   },
   resolve: {
@@ -46,5 +45,4 @@ const extensionConfig = {
     level: "log", // enables logging required for problem matchers
   },
 };
-
 module.exports = [extensionConfig];

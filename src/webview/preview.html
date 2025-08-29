@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-your-nonce-here';">
+    <title>XHTML Preview</title>
+    <style>
+        /* 👇 ハイライト用のスタイル */
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.3);
+            transition: background-color 0.5s;
+        }
+    </style>
+</head>
+
+<body>
+    <script nonce="your-nonce-here" src="{{scriptUri}}"></script>
+</body>
+
+</html>

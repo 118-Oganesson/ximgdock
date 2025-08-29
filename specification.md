@@ -1,185 +1,137 @@
-## XImgDock 拡張機能 仕様書（詳細版）
-
-本仕様書は、開発者がこの文書のみを参照して **XImgDock** を実装できるレベルの詳細さを意図しています。
-
----
+# **XImgDock 仕様書**
 
 ## 1. 概要
 
 **XImgDock** は、VS Code 上で XHTML ファイルの編集を支援する拡張機能です。以下の機能を提供します。
 
-1. **ライブプレビュー**: XHTML の編集内容をリアルタイムにプレビュー
-2. **構文診断**: XHTML のパースエラーを自動検出
-3. **画像ドック**: サイドバーに画像一覧を表示し、クリックで `<img>` タグを挿入
-
-想定ユーザーは Web 小説編集者や電子書籍制作者です。
+1. **ライブプレビュー**: XHTML 編集内容をリアルタイムにプレビュー
+2. **画像ドック**: 画像一覧を表示し、ダブルクリックで `<img>` タグを挿入
+3. **構文診断**: XHTML のパースエラーを自動検出
 
 ---
 
-## 2. UI/UX 要件
+## 2. 画面構成
 
-### 2.1. プレビュー
+XImgDock の利用時、VS Code 内で以下の 4 領域を中心に構成される。
 
-* エディタ右側に Webview パネルとして表示。
-* エディタとプレビューは双方向にスクロール同期する。
-* エディタの行番号とプレビュー内の要素に `data-line` 属性を対応付ける。
-* プレビュー内要素をダブルクリックすると、対応する行にエディタがスクロールする。
-* エディタ内要素をダブルクリックすると、対応する行にプレビューがスクロールする。
+1. **ファイルツリー**
 
-### 2.2. 画像ドック
+   * プロジェクト内のファイル・フォルダ構造を表示
+   * XHTML や画像フォルダを選択して開く
 
-* アクティビティバーに `XImgDock` アイコンを追加。
-* サイドバーに `Image Dock` ビューを表示。
-* 画像フォルダを選択し、サムネイル付きで一覧表示。
-* 上部アクション:
+2. **エディタ画面**
 
-  * フォルダ選択
-  * 再読み込み
-  * ソート切替（ファイル名・サイズ・更新日時）
-* サムネイルは `media/cache` に PNG として保存。
-* ユーザー操作:
+   * XHTML ファイルを編集する主要領域
+   * 診断エラーが赤波線で表示される
 
-  * ダブルクリックまたは右クリックメニューから `<img>` タグを挿入
+3. **プレビュー（Webview）**
 
-### 2.3. 診断
+   * 編集中の XHTML をレンダリングして表示
+   * エディタと双方向同期（クリック / ダブルクリックによる位置対応）
 
-* 編集中の XHTML を `fast-xml-parser` でパース。
-* エラーがある場合、VS Code Diagnostics API を利用して赤波線で強調。
-* 「問題」パネルに詳細を表示。
+4. **画像ギャラリー（Webview）**
+
+   * 選択したフォルダの画像を一覧表示
+   * サムネイル・ファイル名・サイズを確認可能
+   * クリックで挿入、右クリックでプレビューや挿入を選択
 
 ---
 
-## 3. 機能仕様
+## 3. UI/UX 要件
 
-### 3.1. プレビュー機能
+### 3.1. プレビュー
 
-* 使用 API: `window.createWebviewPanel`
-* Webview 側の HTML テンプレート: `/src/preview/webview/index.html`
-* 通信: `webview.postMessage` / `vscode.postMessage`
-* 更新タイミング:
+#### (1) 基本機能
 
-  * ファイル保存時
-  * 入力から 300ms デバウンス後（設定可能）
+* **HTML / XHTML / XML ファイルのプレビュー表示**
+
+  * エディタの編集内容を別ペインに即時反映
+
+* **エディタとプレビューの双方向同期**
+
+  * エディタ変更 → プレビュー更新
+  * エディタ上でダブルクリック → プレビューを対応位置にスクロール
+  * エディタにカーソルを置いたままプレビューをスクロール → エディタ対応行へ移動
+
+#### (2) 行ごとの対応付け
+
+* 各行とプレビュー要素をリンク
+* 精密な行間同期を実現
+
+#### (3) 画像表示
+
+* 相対パス画像を Webview に変換して表示
+
+#### (4) ユーザー体験
+
+* 短い遅延を入れて再描画負荷を軽減
+* ダブルクリック・スクロールなど直感的操作
+* プレビュー行をホバーで行番号表示
+* 読み込み中は「読み込み中…」表示
+
+#### (5) リソース管理
+
+* プレビュー終了時にリソースを自動解放
+
+---
 
 ### 3.2. 画像ドック
 
-* 使用 API: `window.createTreeView`, `TreeDataProvider`
-* サムネイル生成: `sharp`
-* サムネイルキャッシュ: 一時ディレクトリ `media/cache`
-* TreeItem:
+#### (1) 画像フォルダ管理
 
-  * label: ファイル名
-  * iconPath: サムネイル画像
-  * command: `ximgdock.insertImage`
+* 任意フォルダを選択して画像を一覧表示
+* サポート形式: PNG / JPG / JPEG / GIF / BMP / WEBP / SVG
+* 各画像の情報（名前 / サイズ / 更新日 / パス）を取得
 
-### 3.3. XHTML 構文診断
+#### (2) サムネイル & リスト表示
 
-* 使用 API: `languages.createDiagnosticCollection`
-* 使用ライブラリ: `fast-xml-parser`
-* 更新タイミング:
+* サムネイル生成と一覧表示
+* ツリー表示 / グリッド表示切替
+* サムネイルサイズを設定から変更可能
 
-  * 入力変更イベントごとに 300ms デバウンスして解析
-* エラー形式:
+#### (3) ソート & 更新
 
-  * `DiagnosticSeverity.Error`
-  * 範囲: 行・列番号をパーサー結果から算出
+* 並び替え: 「名前順」「サイズ順」「更新日順」
+* 手動更新で最新状態を反映
 
-### 3.4. 画像挿入ロジック
+#### (4) エディタ連携
 
-* 使用 API: `window.activeTextEditor.edit`
-* 挿入内容:
+* ダブルクリックやコマンドでカーソル部分に `<img>` タグを挿入
+* コンテキストメニューから「画像を挿入」
 
-```html
-<img src="./relative/path/to/image.png" alt="filename" />
-```
+#### (5) ギャラリー表示 (Webview)
 
-* `alt`: デフォルトはファイル名（拡張子除去）
-* 将来的に `width` / `height` オプションを設定可能にする
+* グリッドレイアウトで画像一覧
+* 操作ボタン: フォルダ選択 / 更新 / ソート切替
+* 各画像に「サムネイル」「ファイル名」「サイズ」表示
+* ダブルクリックで挿入
 
----
+#### (6) キャッシュ & 設定
 
-## 4. ディレクトリ構成
+* サムネイルキャッシュのクリア & 再生成
+* 設定変更（例: サムネイルサイズ）が即時反映
 
-```
-ximgdock/
-├── src/
-│   ├── extension.ts              // activate, deactivate
-│   ├── preview/
-│   │   ├── PreviewManager.ts     // Webview 管理
-│   │   └── webview/
-│   │       ├── index.html        // プレビュー用 HTML
-│   │       └── script.js         // Webview 側 JS
-│   ├── image-dock/
-│   │   ├── ImageDockProvider.ts  // TreeView Provider
-│   │   ├── ImageTreeView.ts      // 
-│   │   └── ThumbnailManager.ts   // sharp によるサムネイル生成
-│   ├── parser/
-│   │   └── Parser.ts             // fast-xml-parser による解析
-│   └── diagnostics/
-│       └── DiagnosticManager.ts  // Diagnostics 制御
-├── media/
-│   └── cache/                    // サムネイルキャッシュ
-├── package.json                  // マニフェスト
-├── tsconfig.json                 // TypeScript 設定
-└── webpack.config.js             // ビルド設定
-```
+#### (7) リソース管理
+
+* プレビューやギャラリー終了時にリソース解放
+* キャッシュ / Webview を適切に破棄
 
 ---
 
-## 5. package.json コントリビューション
+### 3.3. 構文診断
 
-```json
-"contributes": {
-  "commands": [
-    {
-      "command": "ximgdock.showPreview",
-      "title": "XImgDock: プレビューを開く"
-    },
-    {
-      "command": "ximgdock.selectImageFolder",
-      "title": "画像フォルダを選択"
-    },
-    {
-      "command": "ximgdock.refreshImages",
-      "title": "画像を再読み込み"
-    },
-    {
-      "command": "ximgdock.insertImage",
-      "title": "画像を挿入"
-    }
-  ],
-  "viewsContainers": {
-    "activitybar": [
-      {
-        "id": "ximgdock-view-container",
-        "title": "XImgDock",
-        "icon": "$(device-camera)"
-      }
-    ]
-  },
-  "views": {
-    "ximgdock-view-container": [
-      {
-        "id": "ximgdock-images",
-        "name": "Image Dock",
-        "type": "tree"
-      }
-    ]
-  }
-}
-```
+* XHTML を `fast-xml-parser` で解析
+* エラー時：
 
----
+  * エディタ上に赤波線を表示 (Diagnostics API)
+  * 「問題」パネルに詳細メッセージを出力
 
-## 6. 開発タスク一覧
 
-1. `extension.ts` で activate/deactivate 実装
-2. `PreviewManager.ts` を実装し、Webview パネル作成
-3. `ImageDockProvider.ts` を実装し、画像ツリー表示
-4. `ThumbnailManager.ts` で sharp によるキャッシュ生成
-5. `Parser.ts` で fast-xml-parser をラップ
-6. `DiagnosticManager.ts` で Diagnostics API 実装
-7. 各機能をコマンドにバインド (`package.json` の commands と一致させる)
-
----
-
+└── src/
+    ├── extension.js          // 拡張機能のメイン処理 (必須)
+    ├── previewProvider.js    // ライブプレビュー(Webview)の管理
+    ├── imageDockProvider.js  // 画像ドック(Webview)の管理
+    ├── diagnostics.js        // 構文診断のロジック
+    └── webview/
+        ├── preview.html      // プレビュー画面のHTMLテンプレート
+        └── imageDock.html    // 画像ドック画面のHTMLテンプレート

@@ -3,7 +3,6 @@
   "displayName": "XImgDock",
   "description": "A VS Code extension for XHTML editing: live preview, diagnostics, and an image dock for quick insert. / XHTML編集を支援する拡張機能（プレビュー・診断・画像挿入）",
   "version": "0.0.1",
-  "publisher": "ximgdock",
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -16,137 +15,18 @@
     "commands": [
       {
         "command": "ximgdock.showPreview",
-        "title": "XImgDock: プレビューを開く",
-        "icon": "$(preview)"
-      },
-      {
-        "command": "ximgdock.selectImageFolder",
-        "title": "画像フォルダを選択",
-        "icon": "$(folder-opened)"
-      },
-      {
-        "command": "ximgdock.refreshImages",
-        "title": "画像を再読み込み",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "ximgdock.insertImage",
-        "title": "画像を挿入"
-      },
-      {
-        "command": "ximgdock.changeSortOrder",
-        "title": "ソート順を変更",
-        "icon": "$(sort-precedence)"
-      },
-      {
-        "command": "ximgdock.clearThumbnailCache",
-        "title": "サムネイルキャッシュをクリア",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "ximgdock.showImageGallery",
-        "title": "画像ギャラリーを開く",
-        "icon": "$(gallery)"
-      },
-      {
-        "command": "ximgdock.showImagePreview",
-        "title": "プレビューを表示",
-        "icon": "$(eye)"
+        "title": "XImgDock: Open Preview",
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
-      "view/title": [
+      "editor/title": [
         {
-          "command": "ximgdock.selectImageFolder",
-          "when": "view == ximgdock-images",
-          "group": "navigation@1"
-        },
-        {
-          "command": "ximgdock.refreshImages",
-          "when": "view == ximgdock-images",
-          "group": "navigation@2"
-        },
-        {
-          "command": "ximgdock.changeSortOrder",
-          "when": "view == ximgdock-images",
-          "group": "navigation@3"
-        },
-        {
-          "command": "ximgdock.clearThumbnailCache",
-          "when": "view == ximgdock-images",
-          "group": "navigation@4"
-        },
-        {
-          "command": "ximgdock.showImageGallery",
-          "when": "view == ximgdock-images",
-          "group": "navigation@5"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "ximgdock.insertImage",
-          "when": "view == ximgdock-images && viewItem == imageItem",
-          "group": "inline"
-        },
-        {
-          "command": "ximgdock.showImagePreview",
-          "when": "view == ximgdock-images && viewItem == imageItem",
-          "group": "inline"
+          "when": "resourceLangId == xhtml || resourceLangId == html",
+          "command": "ximgdock.showPreview",
+          "group": "navigation"
         }
       ]
-    },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "ximgdock-view-container",
-          "title": "XImgDock",
-          "icon": "$(device-camera)"
-        }
-      ]
-    },
-    "views": {
-      "ximgdock-view-container": [
-        {
-          "id": "ximgdock-images",
-          "name": "Image Dock",
-          "type": "tree",
-          "icon": "$(file-media)"
-        }
-      ]
-    },
-    "configuration": {
-      "title": "XImgDock",
-      "properties": {
-        "ximgdock.previewDebounceDelay": {
-          "type": "number",
-          "default": 300,
-          "description": "プレビュー更新のデバウンス遅延時間（ミリ秒）"
-        },
-        "ximgdock.diagnosticDebounceDelay": {
-          "type": "number",
-          "default": 300,
-          "description": "診断更新のデバウンス遅延時間（ミリ秒）"
-        },
-        "ximgdock.thumbnailSize": {
-          "type": "number",
-          "default": 128,
-          "description": "サムネイルサイズ（ピクセル）",
-          "minimum": 32,
-          "maximum": 256
-        },
-        "ximgdock.previewSize": {
-          "type": "number",
-          "default": 300,
-          "description": "ホバープレビューの最大サイズ（ピクセル）",
-          "minimum": 100,
-          "maximum": 600
-        },
-        "ximgdock.useRelativePath": {
-          "type": "boolean",
-          "default": true,
-          "description": "画像パスを相対パスで挿入する"
-        }
-      }
     }
   },
   "scripts": {
@@ -163,19 +43,15 @@
   "devDependencies": {
     "@types/vscode": "^1.103.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@typescript-eslint/parser": "^8.39.0",
-    "eslint": "^9.32.0",
+    "@types/node": "24.3.0",
+    "@typescript-eslint/eslint-plugin": "8.41.0",
+    "@typescript-eslint/parser": "8.41.0",
+    "eslint": "9.34.0",
     "typescript": "^5.9.2",
-    "ts-loader": "^9.5.2",
+    "ts-loader": "9.5.4",
     "webpack": "^5.101.0",
     "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2"
-  },
-  "dependencies": {
-    "fast-xml-parser": "5.2.5",
-    "sharp": "0.34.3"
   }
 }
