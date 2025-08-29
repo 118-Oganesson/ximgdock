@@ -6,39 +6,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Gallery</title>
     <style>
+        :root {
+            --background-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --primary-color: #0e639c;
+            --container-bg: #252526;
+            --border-color: #3c3c3c;
+            --hover-bg: #333333;
+        }
+
         body {
-            padding: 10px;
-            font-family: sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
         }
 
         .controls {
             display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background-color: var(--container-bg);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        button,
+        select,
+        input {
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        button:hover,
+        select:hover {
+            background-color: var(--hover-bg);
+            border-color: var(--primary-color);
+        }
+
+        .format-control {
+            flex-basis: 100%;
+            display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .format-control label {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .format-control select,
+        .format-control input {
+            width: 100%;
         }
 
         #image-grid {
             display: grid;
-            gap: 10px;
+            gap: 15px;
         }
 
         .image-item {
             cursor: pointer;
-            border: 1px solid #444;
-            border-radius: 4px;
-            padding: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
             text-align: center;
             overflow: hidden;
+            background-color: var(--container-bg);
+            transition: transform 0.2s, background-color 0.2s;
         }
 
         .image-item:hover {
-            background-color: #3c3c3c;
+            background-color: var(--hover-bg);
+            transform: translateY(-3px);
+            border-color: var(--primary-color);
         }
 
         .image-item img {
             max-width: 100%;
             object-fit: contain;
+            border-radius: 4px;
         }
 
         .filename {
@@ -46,35 +111,32 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 5px;
+            margin-top: 8px;
+            color: #a0a0a0;
         }
 
-        /* --- Size Control --- */
-        /* Medium (Default) */
         #image-grid.size-medium {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         }
 
         .size-medium .image-item img {
-            max-height: 80px;
+            max-height: 90px;
         }
 
-        /* Small */
         #image-grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
         }
 
         .size-small .image-item img {
-            max-height: 50px;
+            max-height: 60px;
         }
 
-        /* Large */
         #image-grid.size-large {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         }
 
         .size-large .image-item img {
-            max-height: 120px;
+            max-height: 150px;
         }
     </style>
 </head>
@@ -93,14 +155,84 @@
             <option value="medium" selected>Size: Medium</option>
             <option value="large">Size: Large</option>
         </select>
-    </div>
 
-    <div id="image-grid" class="size-medium">
-        {{imageGrid}}
+        <div class="format-control">
+            <label for="format-select">Format:</label>
+            <select id="format-select">
+                <option value="<img src=&quot;$src&quot; alt=&quot;$alt&quot; />">Image only (inline)</option>
+                <option value="<br />\n<img src=&quot;$src&quot; alt=&quot;$alt&quot; /><br />">Image with line breaks
+                    (block)</option>
+                <option value="custom">Custom...</option>
+            </select>
+        </div>
+        <div id="custom-format-control" class="format-control" style="display: none;">
+            <label for="format-input">Custom:</label>
+            <input type="text" id="format-input" value="<img src=&quot;$src&quot; alt=&quot;$alt&quot; />" />
+        </div>
     </div>
+    <div id="image-grid" class="size-medium">{{imageGrid}}</div>
 
     <script>
         const vscode = acquireVsCodeApi();
+
+        // DOM要素を取得
+        const sortSelect = document.getElementById('sort-select');
+        const sizeSelect = document.getElementById('size-select');
+        const formatSelect = document.getElementById('format-select');
+        const customFormatControl = document.getElementById('custom-format-control');
+        const formatInput = document.getElementById('format-input');
+        const imageGrid = document.getElementById('image-grid');
+
+        /**
+         * カスタムフォーマット入力欄の表示/非表示を切り替えます。
+         */
+        function toggleCustomFormatInput() {
+            customFormatControl.style.display = (formatSelect.value === 'custom') ? 'flex' : 'none';
+        }
+
+        /**
+         * グリッドの表示サイズを更新します。
+         * @param {string} size - 'small', 'medium', or 'large'
+         */
+        function updateGridSize(size) {
+            imageGrid.classList.remove('size-small', 'size-medium', 'size-large');
+            imageGrid.classList.add(`size-${size}`);
+        }
+
+        /**
+         * 現在のUIの状態を保存します。
+         */
+        function saveState() {
+            vscode.setState({
+                sortBy: sortSelect.value,
+                selectedSize: sizeSelect.value,
+                selectedFormat: formatSelect.value,
+                customFormat: formatInput.value
+            });
+        }
+
+        // --- 初期化処理 ---
+
+        // Webviewの前回の状態を復元します。
+        const previousState = vscode.getState();
+        if (previousState) {
+            if (previousState.sortBy) {
+                sortSelect.value = previousState.sortBy;
+            }
+            if (previousState.selectedSize) {
+                sizeSelect.value = previousState.selectedSize;
+                updateGridSize(previousState.selectedSize);
+            }
+            if (previousState.selectedFormat) {
+                formatSelect.value = previousState.selectedFormat;
+            }
+            if (previousState.customFormat) {
+                formatInput.value = previousState.customFormat;
+            }
+        }
+        toggleCustomFormatInput(); // 初期表示を更新します。
+
+        // --- イベントリスナーの設定 ---
 
         document.getElementById('select-folder-btn').addEventListener('click', () => {
             vscode.postMessage({ command: 'selectFolder' });
@@ -110,36 +242,38 @@
             vscode.postMessage({ command: 'refresh' });
         });
 
-        document.getElementById('sort-select').addEventListener('change', (event) => {
-            vscode.postMessage({
-                command: 'sort',
-                sortBy: event.target.value
-            });
+        sortSelect.addEventListener('change', (event) => {
+            saveState(); // 状態を保存
+            vscode.postMessage({ command: 'sort', sortBy: event.target.value });
         });
 
-        document.getElementById('image-grid').addEventListener('click', (event) => {
+        sizeSelect.addEventListener('change', (event) => {
+            const newSize = event.target.value;
+            updateGridSize(newSize);
+            saveState(); // 状態を保存
+        });
+
+        formatSelect.addEventListener('change', () => {
+            toggleCustomFormatInput();
+            saveState();
+        });
+
+        formatInput.addEventListener('input', saveState);
+
+        imageGrid.addEventListener('click', (event) => {
             const item = event.target.closest('.image-item');
             if (item) {
                 const fileName = item.dataset.filename;
+                // 「カスタム...」が選択されている場合は入力欄の値を、それ以外はドロップダウンの選択値を使用します。
+                const format = (formatSelect.value === 'custom') ? formatInput.value : formatSelect.value;
+
                 vscode.postMessage({
                     command: 'insertImage',
-                    fileName: fileName
+                    fileName: fileName,
+                    format: format
                 });
             }
         });
-
-        // ▼▼▼ Added: Event listener for size selection ▼▼▼
-        document.getElementById('size-select').addEventListener('change', (event) => {
-            const grid = document.getElementById('image-grid');
-            const size = event.target.value;
-
-            // Remove all existing size classes
-            grid.classList.remove('size-small', 'size-medium', 'size-large');
-
-            // Add the newly selected size class
-            grid.classList.add(`size-${size}`);
-        });
-        // ▲▲▲ Added ▲▲▲
     </script>
 </body>
 

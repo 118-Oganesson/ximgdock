@@ -6,12 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-your-nonce-here';">
+
     <title>XHTML Preview</title>
     <style>
-        /* 👇 ハイライト用のスタイル */
+        /*
+         * 一時的なハイライト表示のためのスタイル。
+         * main.jsによって、このクラスが動的に要素へ追加・削除されます。
+         */
         .highlight {
-            background-color: rgba(255, 255, 0, 0.3);
+            background-color: rgba(109, 193, 232, 0.3);
+            /* 半透明の水色 */
             transition: background-color 0.5s;
+            /* 背景色が0.5秒かけて変化するアニメーション */
         }
     </style>
 </head>
