@@ -1,71 +1,68 @@
-# ximgdock README
+# XImgDock 🖼️
 
-This is the README for your extension "ximgdock". After writing up a brief description, we recommend including the following sections.
+XImgDock は、XHTML編集の体験を一新する VS Code 拡張機能です。コードを変更すると即座にライブプレビューへ反映され、デザインをリアルタイムで確認可能。さらに、画像ドックからワンクリックで画像を挿入できるため、わずらわしいウィンドウ切り替えや手動でのパス入力はもう不要です。直感的でスピーディーな制作フローを実現し、あなたのクリエイティブを加速します。
 
-## Features
+XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly reflected in a live preview, allowing real-time design verification. Additionally, images can be inserted with a single click from the image dock, eliminating the need for cumbersome window switching or manual path input. Experience an intuitive and speedy workflow that accelerates your creativity.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+-----
 
-For example if there is an image subfolder under your extension project workspace:
+## 🌟 主な機能 (Features)
 
-\!\[feature X\]\(images/feature-x.png\)
+  * **ライブプレビュー (Live Preview)**
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+      * XHTML ファイルを編集すると、変更がリアルタイムでプレビューに反映されます。
+      * Changes are reflected in the preview in real-time as you edit your XHTML file.
 
-## Requirements
+  * **画像ギャラリー (Image Gallery)**
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+      * 指定したフォルダ内の画像を一覧表示します。
+      * Displays a list of images in the specified folder.
 
-## Extension Settings
+  * **ワンクリック画像挿入 (One-Click Image Insert)**
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+      * 画像をクリックするだけで、カーソル位置に`<img>`タグを簡単に追加できます。
+      * Simply click an image to insert an `<img>` tag at the cursor's position.
 
-For example:
+  * **柔軟なカスタマイズ (Flexible Customization)**
 
-This extension contributes the following settings:
+      * 挿入するタグのフォーマットや、ギャラリーの表示方法（ソート順、サムネイルサイズ）を自由に設定できます。
+      * Freely configure the format of the inserted tag and the gallery's display options (sort order, thumbnail size).
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+-----
 
-## Known Issues
+## 🚀 使い方 (Usage)
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+1.  **HTML/XHTMLファイルを開く (Open an HTML/XHTML file)**
 
-## Release Notes
+      * エディタで `.html` または `.xhtml` ファイルを開きます。
+      * Open a `.html` or `.xhtml` file in the editor.
 
-Users appreciate release notes as you update your extension.
+2.  **プレビューを起動 (Open Preview)**
 
-### 1.0.0
+      * エディタ右上の **プレビューアイコン** をクリックします。
+      * Click the **preview icon** in the editor's top-right corner.
+      * 現在のファイルのライブプレビューが、画面の横に新しいパネルとして表示されます。
+      * A live preview of the current file will open in a new panel next to your editor.
 
-Initial release of ...
+3.  **画像ギャラリーを表示 (Show Image Gallery)**
 
-### 1.0.1
+      * エディタの右上（タブバー）に表示される **カメラアイコン** をクリックします。
+      * Click the **camera icon** located in the top-right corner of the editor's tab bar.
+      * プレビューの横に画像ギャラリーが開きます。`Select Folder` ボタンで画像フォルダを選択してください。
+      * The image gallery opens next to the preview. Use the `Select Folder` button to select an image folder.
 
-Fixed issue #.
 
-### 1.1.0
+4.  **画像を挿入 (Insert Image)**
 
-Added features X, Y, and Z.
+      * ギャラリーに表示された画像をクリックすると、アクティブなエディタのカーソル位置に画像タグが挿入され、ライブプレビューにも即座に反映されます。
+      * Click an image in the gallery to insert its tag at the current cursor position, which will be instantly reflected in the live preview.
 
----
+-----
 
-## Following extension guidelines
+## リリースノート (Release Notes)
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+### 0.0.1
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+  * Initial release of XImgDock.
+  * ライブプレビューと画像ギャラリー機能を搭載。
+  * Features live preview and image gallery functionality.
