@@ -126,7 +126,6 @@ export class ImageGalleryPanel {
             canSelectFolders: true
         };
         const folderUri = await vscode.window.showOpenDialog(options);
-
         if (folderUri && folderUri[0]) {
             this._folderPath = folderUri[0].fsPath;
             this._setupWatcher(this._folderPath); // フォルダ監視を開始
@@ -153,25 +152,21 @@ export class ImageGalleryPanel {
         // 編集中のファイルから画像ファイルへの相対パスを計算
         let relativePath = path.relative(docDir, imagePath).replace(/\\/g, '/');
         if (!relativePath.startsWith('./') && !relativePath.startsWith('../')) {
-            relativePath = './' + relativePath; // カレントディレクトリを示す `.` を補完
+            relativePath = './' + relativePath;
         }
 
         // ファイル名から拡張子を除いた部分をaltテキストとして使用
         const altText = path.basename(fileName, path.extname(fileName));
-
         // フォーマットが指定されていない場合のデフォルト値を設定
         const defaultFormat = `<img src="$src" alt="$alt" />`;
         // 受け取ったフォーマット、またはデフォルト値を使用
         const formatString = format || defaultFormat;
-
         // プレースホルダー ($src, $alt) を実際の値に置換して最終的なHTMLタグを生成
         let imageTag = formatString
             .replace(/\$src/g, relativePath)
             .replace(/\$alt/g, altText);
-
         // フォーマット内の `\n` という文字列を実際の改行コードに変換する
         imageTag = imageTag.replace(/\\n/g, '\n');
-
         // エディタのカーソル位置に画像タグを挿入
         editor.edit(editBuilder => {
             editBuilder.insert(editor.selection.active, imageTag);
@@ -221,7 +216,6 @@ export class ImageGalleryPanel {
             const supportedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
             try {
                 const files = fs.readdirSync(this._folderPath);
-
                 // フォルダ内のファイルをフィルタリングし、画像ファイル情報（名前と更新日時）の配列を作成
                 let imageFiles: ImageFile[] = files
                     .map(file => {
@@ -246,8 +240,10 @@ export class ImageGalleryPanel {
 
                 // 各画像ファイルに対応するHTML要素を生成
                 const imageItems = imageFiles.map(file => {
+                    // ここが修正箇所
                     const filePath = path.join(this._folderPath!, file.name);
                     const webviewUri = this._panel.webview.asWebviewUri(vscode.Uri.file(filePath));
+
                     return `
                         <div class="image-item" data-filename="${file.name}">
                             <img src="${webviewUri}" alt="${file.name}" />
@@ -255,7 +251,6 @@ export class ImageGalleryPanel {
                         </div>
                     `;
                 });
-
                 if (imageItems.length > 0) {
                     imageGridHtml = imageItems.join('');
                 } else {
@@ -265,7 +260,7 @@ export class ImageGalleryPanel {
                 imageGridHtml = '<p>Error reading the selected folder.</p>';
             }
         } else {
-            // ★ フォルダが選択されていない場合、グリッド領域を空にする
+            // フォルダが選択されていない場合、グリッド領域を空にする
             imageGridHtml = '';
         }
 

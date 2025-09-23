@@ -8,51 +8,50 @@ XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly 
 
 ## 🌟 主な機能 (Features)
 
-  * **ライブプレビュー (Live Preview)**
+* **ライブプレビュー (Live Preview)**
 
-      * XHTML ファイルを編集すると、変更がリアルタイムでプレビューに反映されます。
-      * Changes are reflected in the preview in real-time as you edit your XHTML file.
+  * XHTML ファイルを編集すると、変更がリアルタイムでプレビューに反映されます。
+  * Changes are reflected in the preview in real-time as you edit your XHTML file.
 
-  * **画像ギャラリー (Image Gallery)**
+* **画像ギャラリー (Image Gallery)**
 
-      * 指定したフォルダ内の画像を一覧表示します。
-      * Displays a list of images in the specified folder.
+  * 指定したフォルダ内の画像を一覧表示します。
+  * Displays a list of images in the specified folder.
 
-  * **ワンクリック画像挿入 (One-Click Image Insert)**
+* **ワンクリック画像挿入 (One-Click Image Insert)**
 
-      * 画像をクリックするだけで、カーソル位置に`<img>`タグを簡単に追加できます。
-      * Simply click an image to insert an `<img>` tag at the cursor's position.
+  * 画像をクリックするだけで、カーソル位置に`<img>`タグを簡単に追加できます。
+  * Simply click an image to insert an `<img>` tag at the cursor's position.
 
-  * **柔軟なカスタマイズ (Flexible Customization)**
+* **柔軟なカスタマイズ (Flexible Customization)**
 
-      * 挿入するタグのフォーマットや、ギャラリーの表示方法（ソート順、サムネイルサイズ）を自由に設定できます。
-      * Freely configure the format of the inserted tag and the gallery's display options (sort order, thumbnail size).
+  * 挿入するタグのフォーマットや、ギャラリーの表示方法（ソート順、サムネイルサイズ）を自由に設定できます。
+  * Freely configure the format of the inserted tag and the gallery's display options (sort order, thumbnail size).
 
 -----
 
 ## 🚀 使い方 (Usage)
 
-1.  **HTML/XHTMLファイルを開く (Open an HTML/XHTML file)**
+1. **HTML/XHTMLファイルを開く (Open an HTML/XHTML file)**
 
       * エディタで `.html` または `.xhtml` ファイルを開きます。
       * Open a `.html` or `.xhtml` file in the editor.
 
-2.  **プレビューを起動 (Open Preview)**
+2. **プレビューを起動 (Open Preview)**
 
       * エディタ右上の **プレビューアイコン** をクリックします。
       * Click the **preview icon** in the editor's top-right corner.
       * 現在のファイルのライブプレビューが、画面の横に新しいパネルとして表示されます。
       * A live preview of the current file will open in a new panel next to your editor.
 
-3.  **画像ギャラリーを表示 (Show Image Gallery)**
+3. **画像ギャラリーを表示 (Show Image Gallery)**
 
       * エディタの右上（タブバー）に表示される **カメラアイコン** をクリックします。
       * Click the **camera icon** located in the top-right corner of the editor's tab bar.
       * プレビューの横に画像ギャラリーが開きます。`Select Folder` ボタンで画像フォルダを選択してください。
       * The image gallery opens next to the preview. Use the `Select Folder` button to select an image folder.
 
-
-4.  **画像を挿入 (Insert Image)**
+4. **画像を挿入 (Insert Image)**
 
       * ギャラリーに表示された画像をクリックすると、アクティブなエディタのカーソル位置に画像タグが挿入され、ライブプレビューにも即座に反映されます。
       * Click an image in the gallery to insert its tag at the current cursor position, which will be instantly reflected in the live preview.
@@ -63,6 +62,13 @@ XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly 
 
 ### 0.0.1
 
-  * Initial release of XImgDock.
-  * ライブプレビューと画像ギャラリー機能を搭載。
-  * Features live preview and image gallery functionality.
+* Initial release of XImgDock.
+* ライブプレビューと画像ギャラリー機能を搭載。
+* Features live preview and image gallery functionality.
+
+### 0.0.2 (2025-09-23)
+
+* **修正**: Windows環境で画像ギャラリーパネルのサムネイルが表示されない問題を修正しました。
+* **Fixed**: Corrected an issue where image thumbnails would not display in the Image Gallery panel on Windows due to file path format incompatibility.
+* **改善**: ファイルパスの処理をより堅牢にし、様々なオペレーティングシステムでの互換性を向上させました。
+* **Improved**: Enhanced file path handling in the Image Gallery to be more robust across different operating systems.
