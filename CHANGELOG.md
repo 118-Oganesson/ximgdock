@@ -11,3 +11,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - **Fixed**: Corrected an issue where image thumbnails would not display in the Image Gallery panel on Windows due to file path format incompatibility.
 - **Improved**: Enhanced file path handling in the Image Gallery to be more robust across different operating systems.
+
+## [0.0.3] - 2025-09-23
+
+- **Fixed**: Resolved a bug where image thumbnails in the gallery were not displayed correctly on Windows and other environments.
+- **Improved**: Increased stability when selecting folders; fixed an issue where the gallery would fail to load images properly, ensuring reliable image display.

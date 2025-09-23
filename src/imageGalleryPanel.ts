@@ -16,6 +16,7 @@ type ImageFile = {
 /**
  * 画像ギャラリー機能を提供するWebviewパネルを管理するクラス。
  * ユーザーがフォルダを選択し、中の画像を一覧表示して、エディタに挿入する機能を提供します。
+ * 本クラスはシングルトンパターンで実装され、常に単一のパネルインスタンスを管理します。
  */
 export class ImageGalleryPanel {
     public static currentPanel: ImageGalleryPanel | undefined;
@@ -28,18 +29,18 @@ export class ImageGalleryPanel {
     private _previewProvider: PreviewProvider;
 
     private _sortBy: 'name' | 'date' = 'name';
-    private _watcher: fs.FSWatcher | undefined; // フォルダ監視用のウォッチャー
+    private _watcher: fs.FSWatcher | undefined;
 
     /**
-     * ギャラリーパネルを生成、または既存のパネルを表示します (シングルトンパターン)。
+     * ギャラリーパネルを生成、または既存のパネルを表示します。
      * @param extensionUri 拡張機能のルートURI。
      * @param editor 操作対象のテキストエディタ。
      * @param previewProvider プレビューパネルのプロバイダー。
      */
     public static createOrShow(extensionUri: vscode.Uri, editor: vscode.TextEditor | undefined, previewProvider: PreviewProvider) {
-        const column = vscode.ViewColumn.Three; // パネルを表示するカラム
+        const column = vscode.ViewColumn.Three;
 
-        // パネルが既に存在すれば、それを表示してフォーカスする
+        // パネルが既に存在する場合は、それを表示してフォーカスする
         if (ImageGalleryPanel.currentPanel) {
             ImageGalleryPanel.currentPanel._panel.reveal(column);
             ImageGalleryPanel.currentPanel._sourceEditor = editor;
@@ -47,21 +48,27 @@ export class ImageGalleryPanel {
             return;
         }
 
-        // パネルが存在しなければ、新規に作成
+        // パネルが存在しない場合は、新規に作成
         const panel = vscode.window.createWebviewPanel(
             'imageGallery',
             'Image Gallery',
             column,
             {
                 enableScripts: true,
-                // Webviewからアクセス可能なローカルリソースのルートパスをシステムのルートに設定
-                // これにより、ユーザーが選択した任意のフォルダの画像を表示できる
-                localResourceRoots: [vscode.Uri.file('/')]
+                // 初期状態では拡張機能のURIのみを許可
+                localResourceRoots: [extensionUri]
             }
         );
         ImageGalleryPanel.currentPanel = new ImageGalleryPanel(panel, extensionUri, editor, previewProvider);
     }
 
+    /**
+     * 新しいImageGalleryPanelインスタンスを生成します。
+     * @param panel WebviewPanelインスタンス。
+     * @param extensionUri 拡張機能のルートURI。
+     * @param editor 操作対象のテキストエディタ。
+     * @param previewProvider プレビューパネルのプロバイダー。
+     */
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, editor: vscode.TextEditor | undefined, previewProvider: PreviewProvider) {
         this._panel = panel;
         this._extensionUri = extensionUri;
@@ -72,20 +79,20 @@ export class ImageGalleryPanel {
         this._update();
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-        // Webviewからのメッセージ受信時の処理
+        // Webviewからのメッセージ受信時の処理を設定
         this._panel.webview.onDidReceiveMessage(
             async message => {
                 switch (message.command) {
-                    case 'selectFolder': // フォルダ選択
+                    case 'selectFolder':
                         await this._selectFolderAndUpdateImages();
                         return;
-                    case 'insertImage': // 画像タグ挿入
+                    case 'insertImage':
                         this._insertImageTag(message.fileName, message.format);
                         return;
-                    case 'refresh': // 表示更新
+                    case 'refresh':
                         this._update();
                         return;
-                    case 'sort': // 並び替え
+                    case 'sort':
                         this._sortBy = message.sortBy;
                         this._update();
                         return;
@@ -98,14 +105,11 @@ export class ImageGalleryPanel {
      * @param folderPath 監視対象のフォルダパス。
      */
     private _setupWatcher(folderPath: string) {
-        // 既存のウォッチャーがあれば閉じる
         if (this._watcher) {
             this._watcher.close();
         }
         try {
-            // fs.watchでフォルダの変更を監視し、変更があればWebviewを更新
             this._watcher = fs.watch(folderPath, (event, filename) => {
-                // 短時間に複数イベントが発生する場合を考慮し、少し遅延させて更新
                 setTimeout(() => this._update(), 100);
             });
             this._disposables.push({ dispose: () => this._watcher?.close() });
@@ -128,14 +132,36 @@ export class ImageGalleryPanel {
         const folderUri = await vscode.window.showOpenDialog(options);
         if (folderUri && folderUri[0]) {
             this._folderPath = folderUri[0].fsPath;
-            this._setupWatcher(this._folderPath); // フォルダ監視を開始
-            this._update(); // Webviewを更新
+
+            // 選択したフォルダURIをlocalResourceRootsに追加して、新しいパネルを再生成
+            if (ImageGalleryPanel.currentPanel) {
+                ImageGalleryPanel.currentPanel.dispose();
+            }
+            const panel = vscode.window.createWebviewPanel(
+                'imageGallery',
+                'Image Gallery',
+                vscode.ViewColumn.Three,
+                {
+                    enableScripts: true,
+                    localResourceRoots: [this._extensionUri, folderUri[0]]
+                }
+            );
+
+            // 新しいインスタンスに既存の状態を引き継ぐ
+            ImageGalleryPanel.currentPanel = new ImageGalleryPanel(
+                panel,
+                this._extensionUri,
+                this._sourceEditor,
+                this._previewProvider
+            );
+            ImageGalleryPanel.currentPanel._folderPath = this._folderPath;
+            ImageGalleryPanel.currentPanel._setupWatcher(this._folderPath);
+            ImageGalleryPanel.currentPanel._update();
         }
     }
 
     /**
      * アクティブなエディタに画像タグを挿入します。
-     * Webviewから渡されたフォーマット文字列を元にタグを動的に生成します。
      * @param fileName 挿入する画像のファイル名。
      * @param format Webviewから指定されたタグのフォーマット文字列。
      */
@@ -157,21 +183,19 @@ export class ImageGalleryPanel {
 
         // ファイル名から拡張子を除いた部分をaltテキストとして使用
         const altText = path.basename(fileName, path.extname(fileName));
-        // フォーマットが指定されていない場合のデフォルト値を設定
         const defaultFormat = `<img src="$src" alt="$alt" />`;
-        // 受け取ったフォーマット、またはデフォルト値を使用
         const formatString = format || defaultFormat;
-        // プレースホルダー ($src, $alt) を実際の値に置換して最終的なHTMLタグを生成
+
+        // プレースホルダーを実際の値に置換して最終的なHTMLタグを生成
         let imageTag = formatString
             .replace(/\$src/g, relativePath)
             .replace(/\$alt/g, altText);
-        // フォーマット内の `\n` という文字列を実際の改行コードに変換する
         imageTag = imageTag.replace(/\\n/g, '\n');
+
         // エディタのカーソル位置に画像タグを挿入
         editor.edit(editBuilder => {
             editBuilder.insert(editor.selection.active, imageTag);
         }).then(success => {
-            // 挿入成功後、プレビューパネルも更新
             if (success) {
                 this._previewProvider.update(editor.document);
             }
@@ -216,7 +240,7 @@ export class ImageGalleryPanel {
             const supportedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
             try {
                 const files = fs.readdirSync(this._folderPath);
-                // フォルダ内のファイルをフィルタリングし、画像ファイル情報（名前と更新日時）の配列を作成
+                // 画像ファイルをフィルタリングし、情報（名前と更新日時）の配列を作成
                 let imageFiles: ImageFile[] = files
                     .map(file => {
                         const filePath = path.join(this._folderPath!, file);
@@ -228,7 +252,7 @@ export class ImageGalleryPanel {
                         } catch { return null; }
                         return null;
                     })
-                    .filter((file): file is ImageFile => file !== null); // nullを除外
+                    .filter((file): file is ImageFile => file !== null);
 
                 // 設定に基づいてソート
                 imageFiles.sort((a, b) => {
@@ -240,10 +264,8 @@ export class ImageGalleryPanel {
 
                 // 各画像ファイルに対応するHTML要素を生成
                 const imageItems = imageFiles.map(file => {
-                    // ここが修正箇所
                     const filePath = path.join(this._folderPath!, file.name);
                     const webviewUri = this._panel.webview.asWebviewUri(vscode.Uri.file(filePath));
-
                     return `
                         <div class="image-item" data-filename="${file.name}">
                             <img src="${webviewUri}" alt="${file.name}" />

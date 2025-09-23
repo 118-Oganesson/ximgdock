@@ -2,7 +2,7 @@
   "name": "ximgdock",
   "displayName": "XImgDock",
   "description": "XImgDock は、XHTML編集の体験を一新する VS Code 拡張機能です。コードを変更すると即座にライブプレビューへ反映され、デザインをリアルタイムで確認可能。さらに、画像ドックからワンクリックで画像を挿入できるため、わずらわしいウィンドウ切り替えや手動でのパス入力はもう不要です。直感的でスピーディーな制作フローを実現し、あなたのクリエイティブを加速します。/ XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly reflected in a live preview, allowing real-time design verification. Additionally, images can be inserted with a single click from the image dock, eliminating the need for cumbersome window switching or manual path input. Experience an intuitive and speedy workflow that accelerates your creativity.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "118-Oganesson",
   "icon": "./ximgdock_icon.png",
   "engines": {
