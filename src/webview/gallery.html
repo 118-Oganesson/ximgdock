@@ -60,7 +60,9 @@
             border-color: var(--primary-color);
         }
 
-        .format-control {
+        .format-control,
+        .search-control,
+        .filter-control {
             flex-basis: 100%;
             display: flex;
             align-items: center;
@@ -68,22 +70,32 @@
             margin-top: 10px;
         }
 
-        .format-control label {
+        .format-control label,
+        .search-control label,
+        .filter-control label {
             font-size: 14px;
             white-space: nowrap;
         }
 
         .format-control select,
-        .format-control input {
+        .format-control input,
+        .search-control input,
+        .filter-control select {
             width: 100%;
         }
 
         #image-grid {
             display: grid;
             gap: 15px;
+            grid-auto-rows: 1fr;
         }
 
         .image-item {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -102,6 +114,7 @@
 
         .image-item img {
             max-width: 100%;
+            max-height: calc(100% - 25px);
             object-fit: contain;
             border-radius: 4px;
         }
@@ -115,33 +128,59 @@
             color: #a0a0a0;
         }
 
-        #image-grid.size-medium {
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        }
-
-        .size-medium .image-item img {
-            max-height: 90px;
-        }
-
         #image-grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         }
 
-        .size-small .image-item img {
-            max-height: 60px;
+        #image-grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         }
 
         #image-grid.size-large {
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         }
 
-        .size-large .image-item img {
-            max-height: 150px;
+        #image-preview {
+            position: fixed;
+            z-index: 9999;
+            padding: 10px;
+            background: var(--background-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        #image-preview img {
+            display: block;
+            border-radius: 4px;
+        }
+
+        #image-preview.size-none {
+            display: none;
+        }
+
+        #image-preview.size-small img {
+            max-width: 250px;
+            max-height: 250px;
+        }
+
+        #image-preview.size-medium img {
+            max-width: 300px;
+            max-height: 300px;
+        }
+
+        #image-preview.size-large img {
+            max-width: 400px;
+            max-height: 400px;
         }
     </style>
 </head>
 
 <body>
+    <div id="image-preview" class="size-small" style="display: none;">
+        <img id="preview-image" src="" alt="Image Preview">
+    </div>
     <h1>Image Gallery</h1>
     <div class="controls">
         <button id="select-folder-btn">Select Folder</button>
@@ -150,12 +189,34 @@
             <option value="name">Sort by Name</option>
             <option value="date">Sort by Date</option>
         </select>
-        <select id="size-select">
-            <option value="small">Size: Small</option>
-            <option value="medium" selected>Size: Medium</option>
-            <option value="large">Size: Large</option>
+        <select id="thumbnail-size-select">
+            <option value="small">Thumbnails: Small</option>
+            <option value="medium" selected>Thumbnails: Medium</option>
+            <option value="large">Thumbnails: Large</option>
         </select>
-
+        <select id="preview-size-select">
+            <option value="none">Preview: None</option>
+            <option value="small" selected>Preview: Small</option>
+            <option value="medium">Preview: Medium</option>
+            <option value="large">Preview: Large</option>
+        </select>
+        <div class="search-control">
+            <label for="search-input">Search:</label>
+            <input type="text" id="search-input" placeholder="Search by file name...">
+        </div>
+        <div class="filter-control">
+            <label for="filter-select">Filter:</label>
+            <select id="filter-select">
+                <option value="all">All Images</option>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="jpeg">JPEG</option>
+                <option value="gif">GIF</option>
+                <option value="bmp">BMP</option>
+                <option value="webp">WEBP</option>
+                <option value="svg">SVG</option>
+            </select>
+        </div>
         <div class="format-control">
             <label for="format-select">Format:</label>
             <select id="format-select">
@@ -177,11 +238,18 @@
 
         // DOM要素を取得
         const sortSelect = document.getElementById('sort-select');
-        const sizeSelect = document.getElementById('size-select');
+        const thumbnailSizeSelect = document.getElementById('thumbnail-size-select');
+        const previewSizeSelect = document.getElementById('preview-size-select');
         const formatSelect = document.getElementById('format-select');
         const customFormatControl = document.getElementById('custom-format-control');
         const formatInput = document.getElementById('format-input');
         const imageGrid = document.getElementById('image-grid');
+        const searchInput = document.getElementById('search-input');
+        const filterSelect = document.getElementById('filter-select');
+
+        // ホバープレビュー用のDOM要素
+        const imagePreview = document.getElementById('image-preview');
+        const previewImage = document.getElementById('preview-image');
 
         /**
          * カスタムフォーマット入力欄の表示/非表示を切り替えます。
@@ -191,12 +259,44 @@
         }
 
         /**
-         * グリッドの表示サイズを更新します。
+         * グリッドのサムネイルサイズを更新します。
          * @param {string} size - 'small', 'medium', or 'large'
          */
-        function updateGridSize(size) {
+        function updateThumbnailSize(size) {
             imageGrid.classList.remove('size-small', 'size-medium', 'size-large');
             imageGrid.classList.add(`size-${size}`);
+        }
+
+        /**
+         * プレビュー画像の表示サイズを更新します。
+         * @param {string} size - 'none', 'small', 'medium', or 'large'
+         */
+        function updatePreviewSize(size) {
+            imagePreview.classList.remove('size-none', 'size-small', 'size-medium', 'size-large');
+            imagePreview.classList.add(`size-${size}`);
+        }
+
+        /**
+         * フィルタリングと検索を実行する関数
+         */
+        function filterAndSearchImages() {
+            const searchText = searchInput.value.toLowerCase();
+            const selectedFilter = filterSelect.value;
+
+            const imageItems = imageGrid.querySelectorAll('.image-item');
+            imageItems.forEach(item => {
+                const fileName = item.dataset.filename.toLowerCase();
+                const fileExtension = fileName.split('.').pop().toLowerCase(); // ここで拡張子を取得し、小文字に変換
+
+                const matchesSearch = fileName.includes(searchText);
+                const matchesFilter = (selectedFilter === 'all') || (selectedFilter === fileExtension);
+
+                if (matchesSearch && matchesFilter) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         }
 
         /**
@@ -205,23 +305,31 @@
         function saveState() {
             vscode.setState({
                 sortBy: sortSelect.value,
-                selectedSize: sizeSelect.value,
+                thumbnailSize: thumbnailSizeSelect.value,
+                previewSize: previewSizeSelect.value,
                 selectedFormat: formatSelect.value,
                 customFormat: formatInput.value
             });
         }
 
         // --- 初期化処理 ---
-
-        // Webviewの前回の状態を復元します。
         const previousState = vscode.getState();
         if (previousState) {
             if (previousState.sortBy) {
                 sortSelect.value = previousState.sortBy;
             }
-            if (previousState.selectedSize) {
-                sizeSelect.value = previousState.selectedSize;
-                updateGridSize(previousState.selectedSize);
+            if (previousState.thumbnailSize) {
+                thumbnailSizeSelect.value = previousState.thumbnailSize;
+                updateThumbnailSize(previousState.thumbnailSize);
+            } else {
+                updateThumbnailSize('medium'); // デフォルトを中サイズに
+            }
+            if (previousState.previewSize) {
+                previewSizeSelect.value = previousState.previewSize;
+                updatePreviewSize(previousState.previewSize);
+            } else {
+                previewSizeSelect.value = 'small';
+                updatePreviewSize('small');
             }
             if (previousState.selectedFormat) {
                 formatSelect.value = previousState.selectedFormat;
@@ -229,42 +337,51 @@
             if (previousState.customFormat) {
                 formatInput.value = previousState.customFormat;
             }
+        } else {
+            // 初回起動時、デフォルトを設定
+            updateThumbnailSize('medium');
+            updatePreviewSize('small');
         }
-        toggleCustomFormatInput(); // 初期表示を更新します。
+
+        toggleCustomFormatInput();
+        filterAndSearchImages();
 
         // --- イベントリスナーの設定 ---
 
         document.getElementById('select-folder-btn').addEventListener('click', () => {
             vscode.postMessage({ command: 'selectFolder' });
         });
-
         document.getElementById('refresh-btn').addEventListener('click', () => {
             vscode.postMessage({ command: 'refresh' });
         });
-
         sortSelect.addEventListener('change', (event) => {
-            saveState(); // 状態を保存
+            saveState();
             vscode.postMessage({ command: 'sort', sortBy: event.target.value });
         });
-
-        sizeSelect.addEventListener('change', (event) => {
+        thumbnailSizeSelect.addEventListener('change', (event) => {
             const newSize = event.target.value;
-            updateGridSize(newSize);
-            saveState(); // 状態を保存
+            updateThumbnailSize(newSize);
+            saveState();
         });
-
         formatSelect.addEventListener('change', () => {
             toggleCustomFormatInput();
             saveState();
         });
-
         formatInput.addEventListener('input', saveState);
+
+        previewSizeSelect.addEventListener('change', (event) => {
+            const newSize = event.target.value;
+            updatePreviewSize(newSize);
+            saveState();
+        });
+
+        searchInput.addEventListener('input', filterAndSearchImages);
+        filterSelect.addEventListener('change', filterAndSearchImages);
 
         imageGrid.addEventListener('click', (event) => {
             const item = event.target.closest('.image-item');
             if (item) {
                 const fileName = item.dataset.filename;
-                // 「カスタム...」が選択されている場合は入力欄の値を、それ以外はドロップダウンの選択値を使用します。
                 const format = (formatSelect.value === 'custom') ? formatInput.value : formatSelect.value;
 
                 vscode.postMessage({
@@ -274,6 +391,49 @@
                 });
             }
         });
+
+        function updatePreviewPosition(event) {
+            const previewWidth = imagePreview.offsetWidth;
+            const previewHeight = imagePreview.offsetHeight;
+            const margin = 15;
+
+            let x = event.clientX + margin;
+            let y = event.clientY + margin;
+
+            if (x + previewWidth > window.innerWidth) {
+                x = event.clientX - previewWidth - margin;
+            }
+
+            if (y + previewHeight > window.innerHeight) {
+                y = event.clientY - previewHeight - margin;
+            }
+
+            imagePreview.style.left = `${x}px`;
+            imagePreview.style.top = `${y}px`;
+        }
+
+        imageGrid.addEventListener('mouseenter', (event) => {
+            const item = event.target.closest('.image-item');
+            if (item) {
+                const previewSize = previewSizeSelect.value;
+                if (previewSize !== 'none') {
+                    const imgElement = item.querySelector('img');
+                    if (imgElement) {
+                        previewImage.src = imgElement.src;
+                        imagePreview.style.display = 'block';
+                        document.addEventListener('mousemove', updatePreviewPosition);
+                    }
+                }
+            }
+        }, true);
+
+        imageGrid.addEventListener('mouseleave', (event) => {
+            const item = event.target.closest('.image-item');
+            if (item) {
+                imagePreview.style.display = 'none';
+                document.removeEventListener('mousemove', updatePreviewPosition);
+            }
+        }, true);
     </script>
 </body>
 
