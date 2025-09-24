@@ -79,3 +79,14 @@ XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly 
 * **Fixed**: Resolved a bug where image thumbnails in the gallery were not displayed correctly on Windows and other environments.
 * **改善**: フォルダ選択時に発生していた、ギャラリーが画像を正しく読み込めなくなる不具合を修正し、表示の安定性を向上させました。
 * **Improved**: Increased stability when selecting folders; fixed an issue where the gallery would fail to load images properly, ensuring reliable image display.
+
+### 0.0.4 (2025-09-24)
+
+* **追加**: 画像ギャラリーでのホバー時プレビュー機能を追加しました。サムネイルにマウスを乗せると、ビュー内に収まる大きな画像が表示されます。
+* **Added**: Image hover preview in the gallery. Hovering over a thumbnail shows a larger version that automatically stays within the viewport.
+* **追加**: ファイル名による検索バーを追加しました。
+* **Added**: Search bar to quickly find images by file name.
+* **追加**: ファイル形式（PNG, JPG, SVG）によるフィルター機能を追加しました。
+* **Added**: Filter dropdown to sort images by file type (PNG, JPG, SVG).
+* **改善**: 画像挿入のワークフローを効率化し、ギャラリー管理を直感的かつ強力にしました。
+* **Improved**: Streamlined the image insertion workflow, making gallery management more intuitive and efficient.

@@ -16,3 +16,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - **Fixed**: Resolved a bug where image thumbnails in the gallery were not displayed correctly on Windows and other environments.
 - **Improved**: Increased stability when selecting folders; fixed an issue where the gallery would fail to load images properly, ensuring reliable image display.
+
+## [0.0.4] - 2025-09-24
+
+- **Added**: Image hover preview in the gallery. Hovering over a thumbnail shows a larger version that automatically stays within the viewport.
+- **Added**: Search bar to quickly find images by file name.
+- **Added**: Filter dropdown to sort images by file type (PNG, JPG, SVG).
+- **Improved**: Streamlined the image insertion workflow, making gallery management more intuitive and efficient.
