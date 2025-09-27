@@ -23,7 +23,6 @@ export class PreviewProvider {
     private _panel: vscode.WebviewPanel | null = null;
     private readonly _extensionUri: vscode.Uri;
     private _sourceEditor: vscode.TextEditor | undefined;
-
     /** エディタ上の行を一時的にハイライトするためのデコレーション。 */
     private _highlightDecoration: vscode.TextEditorDecorationType;
     /** ハイライトを解除するためのタイマーID。 */
@@ -35,7 +34,6 @@ export class PreviewProvider {
      */
     constructor(extensionUri: vscode.Uri) {
         this._extensionUri = extensionUri;
-
         // エディタの行をハイライトするためのスタイルを定義
         this._highlightDecoration = vscode.window.createTextEditorDecorationType({
             backgroundColor: new vscode.ThemeColor('editor.selectionHighlightBackground'),
@@ -64,6 +62,10 @@ export class PreviewProvider {
             return;
         }
 
+        // ワークスペースフォルダのURIを取得。なければ編集中ファイルのディレクトリをルートとする
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+        const rootPath = workspaceFolder ? workspaceFolder.uri : vscode.Uri.file(path.dirname(editor.document.uri.fsPath));
+
         // パネルが存在しない場合は、新規に作成
         this._panel = vscode.window.createWebviewPanel(
             'xhtmlPreview',
@@ -72,7 +74,7 @@ export class PreviewProvider {
             {
                 enableScripts: true, // Webview内でJavaScriptを有効化
                 localResourceRoots: [ // Webviewからアクセス可能なローカルリソースのルートパス
-                    vscode.Uri.file(path.dirname(editor.document.uri.fsPath)),
+                    rootPath, // ワークスペースのルートを許可
                     this._extensionUri
                 ]
             }
@@ -193,6 +195,6 @@ export class PreviewProvider {
         });
 
         // テンプレート内のプレースホルダーを、変換したコンテンツで置換する
-        return html.replace('', content);
+        return html.replace('</body>', `${content}</body>`);
     }
 }
