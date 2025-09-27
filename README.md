@@ -60,25 +60,14 @@ XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly 
 
 ## リリースノート (Release Notes)
 
-### 0.0.1
+### 0.0.5 (2025-09-28)
 
-* Initial release of XImgDock.
-* ライブプレビューと画像ギャラリー機能を搭載。
-* Features live preview and image gallery functionality.
-
-### 0.0.2 (2025-09-23)
-
-* **修正**: Windows環境で画像ギャラリーパネルのサムネイルが表示されない問題を修正しました。
-* **Fixed**: Corrected an issue where image thumbnails would not display in the Image Gallery panel on Windows due to file path format incompatibility.
-* **改善**: ファイルパスの処理をより堅牢にし、様々なオペレーティングシステムでの互換性を向上させました。
-* **Improved**: Enhanced file path handling in the Image Gallery to be more robust across different operating systems.
-
-### 0.0.3 (2025-09-23)
-
-* **修正**: Windowsを含むすべての環境で、画像ギャラリーにサムネイル画像が正しく表示されない問題を修正しました。
-* **Fixed**: Resolved a bug where image thumbnails in the gallery were not displayed correctly on Windows and other environments.
-* **改善**: フォルダ選択時に発生していた、ギャラリーが画像を正しく読み込めなくなる不具合を修正し、表示の安定性を向上させました。
-* **Improved**: Increased stability when selecting folders; fixed an issue where the gallery would fail to load images properly, ensuring reliable image display.
+* **修正**: ライブプレビューで相対パス（`../`など）を使用して指定された画像が表示されない問題を修正しました。
+* **Fixed**: Resolved an issue where images referenced with relative paths (e.g., `../`) would not display in the live preview pane.
+* **修正**: プレビューパネルのコンテンツセキュリティポリシー（CSP）を更新し、ワークスペース内のローカル画像が確実に表示されるようにしました。
+* **Fixed**: Updated the preview panel's Content Security Policy (CSP) to ensure local images within the workspace are reliably displayed.
+* **改善**: ライブプレビューのレンダリング安定性を向上させ、表示の信頼性を高めました。
+* **Improved**: Enhanced the rendering stability and reliability of the live preview.
 
 ### 0.0.4 (2025-09-24)
 
@@ -90,3 +79,23 @@ XImgDock revolutionizes XHTML editing in VS Code. Changes in code are instantly 
 * **Added**: Filter dropdown to sort images by file type (PNG, JPG, SVG).
 * **改善**: 画像挿入のワークフローを効率化し、ギャラリー管理を直感的かつ強力にしました。
 * **Improved**: Streamlined the image insertion workflow, making gallery management more intuitive and efficient.
+
+### 0.0.3 (2025-09-23)
+
+* **修正**: Windowsを含むすべての環境で、画像ギャラリーにサムネイル画像が正しく表示されない問題を修正しました。
+* **Fixed**: Resolved a bug where image thumbnails in the gallery were not displayed correctly on Windows and other environments.
+* **改善**: フォルダ選択時に発生していた、ギャラリーが画像を正しく読み込めなくなる不具合を修正し、表示の安定性を向上させました。
+* **Improved**: Increased stability when selecting folders; fixed an issue where the gallery would fail to load images properly, ensuring reliable image display.
+
+### 0.0.2 (2025-09-23)
+
+* **修正**: Windows環境で画像ギャラリーパネルのサムネイルが表示されない問題を修正しました。
+* **Fixed**: Corrected an issue where image thumbnails would not display in the Image Gallery panel on Windows due to file path format incompatibility.
+* **改善**: ファイルパスの処理をより堅牢にし、様々なオペレーティングシステムでの互換性を向上させました。
+* **Improved**: Enhanced file path handling in the Image Gallery to be more robust across different operating systems.
+
+### 0.0.1
+
+* Initial release of XImgDock.
+* ライブプレビューと画像ギャラリー機能を搭載。
+* Features live preview and image gallery functionality.
